@@ -1,0 +1,49 @@
+name: Build and deploy Python app to Azure Web App - SatiagoJimenezAPE3
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        cd SITU/SITU-main
+        pip install -r requirements.txt
+
+    - name: Zip artifact
+      run: |
+        cd SITU/SITU-main
+        zip -r ../../release.zip .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-app
+        path: release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: python-app
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'SatiagoJimenezAPE3'
+        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+        package: release.zip
